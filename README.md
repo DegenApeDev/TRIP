@@ -30,6 +30,12 @@ python trip.py --models opencode-deepseek-v4-flash xai-grok-4.3
 # Concurrency (N simultaneous requests per model)
 python trip.py --provider opencode -c 5
 
+# Test a single model under load with 10 concurrent requests
+python trip.py --models opencode-deepseek-v4-flash --concurrency 10
+
+# Compare providers at 5x concurrency
+python trip.py --provider opencode xai -c 5
+
 # Custom prompt and token limit
 python trip.py --all --max-tokens 128 --prompt "Write a haiku about GPUs"
 
@@ -49,6 +55,22 @@ python trip.py --all --html ./results.html
 | `--provider opencode xai` | All models from both providers |
 | `--models key1 key2` | Only the specified keys |
 | *(none)* | Models listed in `run_by_default` |
+
+### All flags
+
+| Flag | Description | Default |
+|---|---|---|
+| `--all` | Benchmark every model in `models.json` | — |
+| `--provider ...` | Benchmark all models from one or more providers | — |
+| `--models key1 key2` | Benchmark specific model keys | `run_by_default` from config |
+| `-c` / `--concurrency N` | Simultaneous requests per model | `1` |
+| `--max-tokens N` | Max output tokens per request | `512` |
+| `--temperature N` | Sampling temperature | `0.7` |
+| `--prompt "..."` | Custom user prompt | Built-in prompt |
+| `--system-prompt "..."` | Optional system prompt | — |
+| `--timeout N` | Per-request timeout in seconds | `120` |
+| `--html PATH` | Custom HTML report path | `trip_report_YYYYMMDD_HHMMSS.html` |
+| `-v` / `--verbose` | Debug: show request URLs, auth, response bodies | — |
 
 ## Configuration
 
@@ -98,7 +120,7 @@ python trip.py --provider local
 ## Output
 
 - **Terminal**: Markdown table with per-model TTFT, TPS, tokens, and errors
-- **HTML**: Auto-generated `trip_report.html` with color-coded bars and summary cards — opens in your browser
+- **HTML**: Auto-generated `trip_report_YYYYMMDD_HHMMSS.html` — timestamped so previous runs are preserved
 
 ## Providers & models
 
