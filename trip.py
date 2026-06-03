@@ -156,7 +156,7 @@ def _build_tiktoken_counter(model: str) -> Callable[[str], int]:
 
 
 def _build_fallback_counter() -> Callable[[str], int]:
-    return lambda text: len(text.split())
+    return lambda text: max(1, len(text) // 4)
 
 
 def _get_tokenizer(model: str) -> Callable[[str], int]:
@@ -460,15 +460,18 @@ async def benchmark_model(
     *,
     model_key: str,
     config: dict[str, str],
-    prompt: str,
+    prompts: list[str],
     system_prompt: str | None,
     max_tokens: int,
     temperature: float,
     concurrency: int,
+    runs: int,
     timeout: float,
     provider_name: str = "",
 ) -> ModelBenchResult:
-    """Run *concurrency* requests against a single model and return aggregates."""
+    """Run *runs* rounds of *concurrency* concurrent requests against a single
+    model, cycling through *prompts*.  A warm-up request is sent first to
+    eliminate DNS / TLS / connection overhead."""
 
     endpoint_type = config["endpoint_type"]
     base_url = config["base_url"].rstrip("/")
@@ -484,11 +487,6 @@ async def benchmark_model(
     if not api_key:
         print(f"    WARNING: ${config['api_key_env']} not set — request will be unauthenticated")
 
-    messages: list[dict] = []
-    if system_prompt:
-        messages.append({"role": "system", "content": system_prompt})
-    messages.append({"role": "user", "content": prompt})
-
     extractor = _CONTENT_EXTRACTORS.get(endpoint_type)
     if extractor is None:
         return ModelBenchResult(
@@ -497,7 +495,7 @@ async def benchmark_model(
             tps_mean=0, tps_p50=0, tps_p95=0,
             output_tokens_mean=0, total_tokens_mean=0,
             total_latency_mean=0,
-            requests_sent=concurrency, successes=0,
+            requests_sent=concurrency * runs, successes=0,
             errors=[f"Unknown endpoint_type: {endpoint_type}"],
             endpoint_type=endpoint_type,
             provider=provider_name,
@@ -508,31 +506,67 @@ async def benchmark_model(
         max_connections=concurrency,
     )
 
+    auth_type = config.get("auth_type", "bearer")
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "text/event-stream",
+    }
+    if api_key:
+        header_name = _AUTH_HEADERS.get(auth_type, "Authorization")
+        header_value = api_key if auth_type == "x-api-key" else f"Bearer {api_key}"
+        headers[header_name] = header_value
+
     async with httpx.AsyncClient(
         limits=limits,
         timeout=httpx.Timeout(timeout),
     ) as client:
-        auth_type = config.get("auth_type", "bearer")
-        tasks = [
-            benchmark_request(
-                request_id=i + 1,
-                client=client,
-                url=url,
-                api_key=api_key,
-                model=model_id,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                timeout=timeout,
-                content_extractor=extractor,
-                auth_type=auth_type,
-            )
-            for i in range(concurrency)
-        ]
-        results = await asyncio.gather(*tasks)
+        # ---- warm-up ----
+        try:
+            wu_body = {
+                "model": model_id,
+                "messages": [{"role": "user", "content": "warm-up"}],
+                "max_tokens": 16,
+                "stream": True,
+            }
+            if temperature > 0:
+                wu_body["temperature"] = temperature
+            async with client.stream("POST", url, json=wu_body, headers=headers) as wu_resp:
+                if wu_resp.status_code == 200:
+                    async for _ in _iter_sse_events(wu_resp):
+                        pass
+        except Exception:
+            pass
 
-    success_results = [r for r in results if r.success]
-    errors = [r.error for r in results if r.error]
+        # ---- benchmark runs ----
+        all_results: list[RequestResult] = []
+        for run_idx in range(runs):
+            prompt = prompts[run_idx % len(prompts)]
+            messages: list[dict] = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
+
+            tasks = [
+                benchmark_request(
+                    request_id=run_idx * concurrency + i + 1,
+                    client=client,
+                    url=url,
+                    api_key=api_key,
+                    model=model_id,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    timeout=timeout,
+                    content_extractor=extractor,
+                    auth_type=auth_type,
+                )
+                for i in range(concurrency)
+            ]
+            run_results = await asyncio.gather(*tasks)
+            all_results.extend(run_results)
+
+    success_results = [r for r in all_results if r.success]
+    errors = [r.error for r in all_results if r.error]
 
     if success_results:
         ttft_vals = [r.ttft for r in success_results]
@@ -565,7 +599,7 @@ async def benchmark_model(
         output_tokens_mean=output_tok_mean,
         total_tokens_mean=total_tok_mean,
         total_latency_mean=lat_mean,
-        requests_sent=concurrency,
+        requests_sent=concurrency * runs,
         successes=len(success_results),
         errors=errors,
         endpoint_type=endpoint_type,
@@ -673,10 +707,11 @@ def _timestamp() -> str:
 def generate_html_report(
     results: list[ModelBenchResult],
     *,
-    prompt: str,
+    prompts: list[str],
     max_tokens: int,
     temperature: float,
     concurrency: int,
+    runs: int,
     output_path: str,
 ) -> None:
     """Write a self-contained HTML benchmark report to *output_path*."""
@@ -749,7 +784,9 @@ def generate_html_report(
       </tr>
 """
 
-    prompt_preview = prompt[:120] + ("..." if len(prompt) > 120 else "")
+    prompt_previews = " | ".join(
+        p[:80] + ("..." if len(p) > 80 else "") for p in prompts
+    )
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -822,13 +859,15 @@ def generate_html_report(
       <div class="meta-value">{success_count}/{len(results)} succeeded</div></div>
     <div class="meta-item"><div class="meta-label">Concurrency</div>
       <div class="meta-value">{concurrency}</div></div>
+    <div class="meta-item"><div class="meta-label">Runs</div>
+      <div class="meta-value">{runs}</div></div>
     <div class="meta-item"><div class="meta-label">Max Tokens</div>
       <div class="meta-value">{max_tokens}</div></div>
     <div class="meta-item"><div class="meta-label">Temperature</div>
       <div class="meta-value">{temperature}</div></div>
   </div>
 
-  <div class="prompt"><strong>Prompt:</strong> {prompt_preview}</div>
+  <div class="prompt"><strong>Prompt(s):</strong> {prompt_previews}</div>
 
   <table>
     <thead>
@@ -896,11 +935,12 @@ def generate_html_report(
 async def run_matrix_benchmark(
     *,
     model_keys: list[str],
-    prompt: str,
+    prompts: list[str],
     system_prompt: str | None,
     max_tokens: int,
     temperature: float,
     concurrency: int,
+    runs: int,
     timeout: float,
 ) -> list[ModelBenchResult]:
     """Iterate over *model_keys*, benchmark each, return results."""
@@ -926,17 +966,19 @@ async def run_matrix_benchmark(
             continue
 
         print(f"  {key} ({config['model_id']})  [{config['endpoint_type']}]  "
-              f"@ {config.get('_provider', '?')}  concurrency={concurrency}  max_tokens={max_tokens}  ...", end=" ")
+              f"@ {config.get('_provider', '?')}  runs={runs}  concurrency={concurrency}  "
+              f"max_tokens={max_tokens}  ...", end=" ")
         sys.stdout.flush()
 
         result = await benchmark_model(
             model_key=key,
             config=config,
-            prompt=prompt,
+            prompts=prompts,
             system_prompt=system_prompt,
             max_tokens=max_tokens,
             temperature=temperature,
             concurrency=concurrency,
+            runs=runs,
             timeout=timeout,
             provider_name=config.get("_provider", ""),
         )
@@ -992,7 +1034,9 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--provider", nargs="+", default=None,
                     help="Benchmark all models from one or more providers (e.g. opencode xai).")
     p.add_argument("--prompt", default=_DEFAULT_PROMPT,
-                    help="User prompt to send.")
+                    help="User prompt(s) to send. Multiple values cycle across runs.")
+    p.add_argument("--runs", type=int, default=1,
+                    help="Number of benchmark runs per model (default: 1).")
     p.add_argument("--system-prompt", default=None,
                     help="Optional system prompt.")
     p.add_argument("--max-tokens", type=int, default=512,
@@ -1042,20 +1086,23 @@ def main() -> None:
     if args.concurrency < 1:
         parser.error("--concurrency must be >= 1")
 
+    prompts = args.prompt if isinstance(args.prompt, list) else [args.prompt]
+
     print(f"TRIP — Token Round-trip Inspection Profiler")
     print(f"  Models:      {', '.join(model_keys)}")
     print(f"  Concurrency: {args.concurrency}  |  Max tokens: {args.max_tokens}  "
-          f"|  Temp: {args.temperature}")
+          f"|  Temp: {args.temperature}  |  Runs: {args.runs}")
     print()
 
     results = asyncio.run(
         run_matrix_benchmark(
             model_keys=model_keys,
-            prompt=args.prompt,
+            prompts=prompts,
             system_prompt=args.system_prompt,
             max_tokens=args.max_tokens,
             temperature=args.temperature,
             concurrency=args.concurrency,
+            runs=args.runs,
             timeout=args.timeout,
         )
     )
@@ -1070,10 +1117,11 @@ def main() -> None:
         html_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"trip_report_{ts}.html")
     generate_html_report(
         results,
-        prompt=args.prompt,
+        prompts=prompts,
         max_tokens=args.max_tokens,
         temperature=args.temperature,
         concurrency=args.concurrency,
+        runs=args.runs,
         output_path=html_path,
     )
 

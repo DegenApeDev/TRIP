@@ -15,6 +15,16 @@
       "api_key_env": "OPENROUTER_API_KEY",
       "endpoint_type": "chat"
     },
+    "google": {
+      "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "api_key_env": "GOOGLE_API_KEY",
+      "endpoint_type": "chat"
+    },
+    "deepseek": {
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key_env": "DEEPSEEK_API_KEY",
+      "endpoint_type": "chat"
+    },
     "local": {
       "base_url": "http://localhost:1234/v1",
       "api_key_env": "LOCAL_API_KEY",
@@ -24,6 +34,7 @@
   "models": [
     { "key": "opencode-deepseek-v4-flash",  "model_id": "deepseek-v4-flash",   "provider": "opencode" },
     { "key": "opencode-deepseek-v4-pro",    "model_id": "deepseek-v4-pro",     "provider": "opencode" },
+    { "key": "opencode-minimax-m3",         "model_id": "minimax-m3",          "provider": "opencode" },
     { "key": "opencode-minimax-m2.7",       "model_id": "minimax-m2.7",        "provider": "opencode" },
     { "key": "opencode-minimax-m2.5",       "model_id": "minimax-m2.5",        "provider": "opencode" },
     { "key": "opencode-kimi-k2.6",          "model_id": "kimi-k2.6",           "provider": "opencode" },
@@ -52,8 +63,21 @@
     { "key": "or-gemini-2.5-flash",      "model_id": "google/gemini-2.5-flash",           "provider": "openrouter" },
     { "key": "or-llama4-maverick",      "model_id": "meta-llama/llama-4-maverick",       "provider": "openrouter" },
     { "key": "or-qwen3-coder-plus",      "model_id": "qwen/qwen3-coder-plus",           "provider": "openrouter" },
+    { "key": "or-kimi-k2.6-free",      "model_id": "moonshotai/kimi-k2.6:free",           "provider": "openrouter" },
 
-    { "key": "local-llama", "model_id": "meta-llama/Meta-Llama-3-8B-Instruct", "provider": "local" }
+    { "key": "google-gemini-3.5-flash",      "model_id": "gemini-3.5-flash",             "provider": "google" },
+    { "key": "google-gemini-3-flash-preview", "model_id": "gemini-3-flash-preview",    "provider": "google" },
+    { "key": "google-gemini-2.5-flash",     "model_id": "gemini-2.5-flash",           "provider": "google" },
+
+    { "key": "ds-deepseek-v4-pro",     "model_id": "deepseek-v4-pro",     "provider": "deepseek" },
+    { "key": "ds-deepseek-v4-flash",   "model_id": "deepseek-v4-flash",   "provider": "deepseek" },
+    { "key": "ds-deepseek-chat",       "model_id": "deepseek-chat",       "provider": "deepseek" },
+    { "key": "ds-deepseek-reasoner",   "model_id": "deepseek-reasoner",   "provider": "deepseek" },
+
+    { "key": "local-nemotron3nano", "model_id": "nvidia/nemotron-3-nano-4b", "provider": "local" },
+    { "key": "local-llama3", "model_id": "meta-llama-3.1-8b-instruct", "provider": "local" },
+    { "key": "local-qwen25coder7b", "model_id": "qwen2.5-coder-7b-instruct@q4_k_m", "provider": "local" },
+    { "key": "local-gemma-4-e4b", "model_id": "google/gemma-4-e4b", "provider": "local" }
   ],
   "run_by_default": [
     "opencode-deepseek-v4-flash",
