@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TRIP &mdash; Token Round-trip Inspection Profiler &mdash; 2026-05-17 12:39:19</title>
+<style>
+  :root {
+    --bg: #0b0f19;
+    --surface: #131927;
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --dim: #64748b;
+    --accent: #38bdf8;
+    --ok: #22c55e;
+    --fail: #ef4444;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+         background: var(--bg); color: var(--text); padding: 2rem; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: .25rem; }
+  .logo { color: var(--accent); }
+  .timestamp { color: var(--dim); font-size: .85rem; margin-bottom: 1.5rem; }
+  .meta { display: flex; gap: 2rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .meta-item { background: var(--surface); border: 1px solid var(--border);
+                border-radius: 8px; padding: .6rem 1rem; }
+  .meta-label { font-size: .75rem; color: var(--dim); text-transform: uppercase; letter-spacing: .05em; }
+  .meta-value { font-size: 1.1rem; font-weight: 600; margin-top: .15rem; }
+  .prompt { background: var(--surface); border: 1px solid var(--border);
+             border-radius: 8px; padding: .75rem 1rem; margin-bottom: 1.5rem;
+             font-size: .85rem; color: var(--dim); }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  thead th { text-align: left; padding: .6rem .75rem; border-bottom: 2px solid var(--border);
+              color: var(--dim); font-weight: 600; text-transform: uppercase;
+              font-size: .7rem; letter-spacing: .08em; white-space: nowrap; }
+  tbody td { padding: .65rem .75rem; border-bottom: 1px solid var(--border);
+              vertical-align: top; }
+  .row-ok td { background: var(--surface); }
+  .row-fail td { background: #1a1015; }
+  .sub { display: block; font-size: .7rem; color: var(--dim); }
+  .badge { display: inline-block; font-size: .65rem; font-weight: 700;
+            padding: .15em .45em; border-radius: 4px; text-transform: uppercase;
+            letter-spacing: .06em; margin-right: .35rem; }
+  .badge.ok { background: rgba(34,197,94,.15); color: var(--ok); }
+  .badge.fail { background: rgba(239,68,68,.15); color: var(--fail); }
+  .cell-bar { height: 4px; background: var(--border); border-radius: 2px;
+               margin-bottom: .3rem; overflow: hidden; }
+  .bar { height: 100%; border-radius: 2px; transition: width .3s; }
+  .error { color: var(--fail); font-size: .75rem; margin-top: .25rem; }
+  .provider { background: rgba(56,189,248,.12); color: var(--accent);
+               font-size: .7rem; font-weight: 600; padding: .15em .45em;
+               border-radius: 4px; text-transform: uppercase; letter-spacing: .04em; }
+  .summary { margin-top: 1.5rem; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  .summary-card { background: var(--surface); border: 1px solid var(--border);
+                    border-radius: 8px; padding: 1rem 1.5rem; flex: 1; min-width: 200px; }
+  .summary-card .val { font-size: 1.6rem; font-weight: 700; }
+  .summary-card .label { font-size: .75rem; color: var(--dim); text-transform: uppercase;
+                           letter-spacing: .06em; margin-top: .25rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1><span class="logo">TRIP</span> — Benchmarks</h1>
+  <p class="timestamp">2026-05-17 12:39:19</p>
+
+  <div class="meta">
+    <div class="meta-item"><div class="meta-label">Models</div>
+      <div class="meta-value">1/1 succeeded</div></div>
+    <div class="meta-item"><div class="meta-label">Concurrency</div>
+      <div class="meta-value">1</div></div>
+    <div class="meta-item"><div class="meta-label">Max Tokens</div>
+      <div class="meta-value">32</div></div>
+    <div class="meta-item"><div class="meta-label">Temperature</div>
+      <div class="meta-value">0.7</div></div>
+  </div>
+
+  <div class="prompt"><strong>Prompt:</strong> Explain the concept of 'attention is all you need' in the context of transformer architectures, including how self-atten...</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Model</th>
+        <th>Provider</th>
+        <th>Status</th>
+        <th>TTFT</th>
+        <th>Tokens/sec</th>
+        <th>Out Tok</th>
+        <th>Latency</th>
+        <th>Errors</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="row-ok">
+        <td>opencode-deepseek-v4-flash<br><span class="sub">deepseek-v4-flash</span></td>
+        <td><span class="provider">opencode</span></td>
+        <td><span class="badge ok">OK</span> 1/1</td>
+        <td>
+          <div class="cell-bar"><div class="bar" style="width:23.1%;background:#84cc16"></div></div>
+          462&thinsp;ms
+          <span class="sub">p50 462&thinsp;ms</span>
+          <span class="sub">p95 462&thinsp;ms</span>
+        </td>
+        <td>
+          <div class="cell-bar"><div class="bar" style="width:100.0%;background:#eab308"></div></div>
+          54.1
+          <span class="sub">p50 54.1</span>
+          <span class="sub">p95 54.1</span>
+        </td>
+        <td>32</td>
+        <td>
+          <div class="cell-bar"><div class="bar" style="width:100.0%;background:#84cc16"></div></div>
+          1.05&thinsp;s
+        </td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="summary">
+    <div class="summary-card">
+      <div class="val" style="color:#eab308">54.1</div>
+      <div class="label">Best TPS &mdash; opencode-deepseek-v4-flash</div>
+    </div>
+    <div class="summary-card">
+      <div class="val" style="color:#84cc16">462&thinsp;ms</div>
+      <div class="label">Lowest TTFT &mdash; opencode-deepseek-v4-flash</div>
+    </div>
+    <div class="summary-card">
+      <div class="val" style="color:#84cc16">1.05&thinsp;s</div>
+      <div class="label">Lowest Latency &mdash; opencode-deepseek-v4-flash</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

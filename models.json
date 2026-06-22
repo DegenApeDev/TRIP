@@ -25,6 +25,11 @@
       "api_key_env": "DEEPSEEK_API_KEY",
       "endpoint_type": "chat"
     },
+    "minimax": {
+      "base_url": "https://api.minimax.io/v1",
+      "api_key_env": "MINIMAX_API_KEY",
+      "endpoint_type": "chat"
+    },
     "local": {
       "base_url": "http://localhost:1234/v1",
       "api_key_env": "LOCAL_API_KEY",
@@ -63,6 +68,7 @@
     { "key": "or-gemini-2.5-flash",      "model_id": "google/gemini-2.5-flash",           "provider": "openrouter" },
     { "key": "or-llama4-maverick",      "model_id": "meta-llama/llama-4-maverick",       "provider": "openrouter" },
     { "key": "or-qwen3-coder-plus",      "model_id": "qwen/qwen3-coder-plus",           "provider": "openrouter" },
+    { "key": "or-glm-5.2",             "model_id": "z-ai/glm-5.2",                         "provider": "openrouter" },
     { "key": "or-kimi-k2.6-free",      "model_id": "moonshotai/kimi-k2.6:free",           "provider": "openrouter" },
 
     { "key": "google-gemini-3.5-flash",      "model_id": "gemini-3.5-flash",             "provider": "google" },
@@ -73,6 +79,12 @@
     { "key": "ds-deepseek-v4-flash",   "model_id": "deepseek-v4-flash",   "provider": "deepseek" },
     { "key": "ds-deepseek-chat",       "model_id": "deepseek-chat",       "provider": "deepseek" },
     { "key": "ds-deepseek-reasoner",   "model_id": "deepseek-reasoner",   "provider": "deepseek" },
+
+    { "key": "minimax-m3",             "model_id": "MiniMax-M3",             "provider": "minimax" },
+    { "key": "minimax-m2.7",           "model_id": "MiniMax-M2.7",           "provider": "minimax" },
+    { "key": "minimax-m2.7-highspeed", "model_id": "MiniMax-M2.7-highspeed", "provider": "minimax" },
+    { "key": "minimax-m2.5",           "model_id": "MiniMax-M2.5",           "provider": "minimax" },
+    { "key": "minimax-m2.5-highspeed", "model_id": "MiniMax-M2.5-highspeed", "provider": "minimax" },
 
     { "key": "local-nemotron3nano", "model_id": "nvidia/nemotron-3-nano-4b", "provider": "local" },
     { "key": "local-llama3", "model_id": "meta-llama-3.1-8b-instruct", "provider": "local" },
